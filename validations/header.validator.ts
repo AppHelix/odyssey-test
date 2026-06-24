@@ -1,4 +1,4 @@
-import { Page, APIRequestContext, expect } from "@playwright/test";
+import { Page, APIRequestContext, expect, test } from "@playwright/test";
 import { HeaderValidationConfig } from "../config/page-validation.config";
 import { HomePage } from "../pages/HomePage";
 import { verifyHttpStatus } from "../utils/network";
@@ -42,7 +42,13 @@ export async function validateHeader(
   for (const checkType of ACTIVE_HEADER_CHECKS) {
     const check = HEADER_CHECK_REGISTRY[checkType];
     if (check) {
-      await check.validate(page, requestContext, config, baseURL, homePage);
+      await test.step(check.name, async () => {
+        try {
+          await check.validate(page, requestContext, config, baseURL, homePage);
+        } catch (err: any) {
+          expect.soft(true, `Sub-check failed: ${err.message || String(err)}`).toBe(false);
+        }
+      });
     }
   }
 }
