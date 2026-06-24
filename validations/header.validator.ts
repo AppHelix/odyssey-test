@@ -102,19 +102,40 @@ const HEADER_CHECK_REGISTRY: Record<HeaderCheckType, HeaderCheckDefinition> = {
       await learnBtn.first().click();
       const megaMenu = homePage.getMegaMenu();
       await expect(megaMenu.first(), "Mega menu should become visible after clicking Learn button").toBeVisible();
+
+      // Close the mega menu drawer to restore initial state
+      await learnBtn.first().click();
+      await expect(megaMenu.first(), "Mega menu should close").not.toBeVisible();
     },
   },
   search: {
     type: "search",
     name: "Search Input Interactive Focus",
     validate: async (page, requestContext, config, baseURL, homePage) => {
-      const searchBtn = homePage.getSearchButton();
-      await expect(searchBtn.first(), "Search button trigger should be visible").toBeVisible();
-
-      await searchBtn.first().click();
       const searchInput = homePage.getSearchInput();
-      await expect(searchInput.first(), "Search input should be visible after clicking Search trigger").toBeVisible();
-      await expect(searchInput.first(), "Search input should be focused after clicking Search trigger").toBeFocused();
+      const searchBtn = homePage.getSearchButton();
+
+      // Check if search input is already visible inline (e.g. desktop view)
+      const isSearchInputVisible = await searchInput.first().isVisible().catch(() => false);
+
+      if (!isSearchInputVisible) {
+        // If not visible inline, we expect a search trigger button to exist and be visible
+        await expect(searchBtn.first(), "Search button trigger should be visible since search input is not inline").toBeVisible();
+        await searchBtn.first().click();
+        
+        // After clicking the trigger, the search input should become visible and receive focus
+        await expect(searchInput.first(), "Search input should be visible after clicking Search trigger").toBeVisible();
+        await expect(searchInput.first(), "Search input should be focused after clicking Search trigger").toBeFocused();
+
+        // Close the search modal/overlay by pressing Escape
+        await page.keyboard.press("Escape");
+        await expect(searchInput.first(), "Search modal should close").not.toBeVisible();
+      } else {
+        // If already visible inline, just assert its visibility and verify that we can focus it
+        await expect(searchInput.first(), "Search input should be visible inline").toBeVisible();
+        await searchInput.first().focus();
+        await expect(searchInput.first(), "Search input should receive focus").toBeFocused();
+      }
     },
   },
 };
