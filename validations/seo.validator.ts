@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { Page, expect, test } from "@playwright/test";
 import { SeoValidationConfig } from "../config/page-validation.config";
 import { isValidUrl } from "../utils/network";
 
@@ -30,7 +30,13 @@ export async function validateSeo(
   for (const checkType of ACTIVE_SEO_CHECKS) {
     const check = SEO_CHECK_REGISTRY[checkType];
     if (check) {
-      await check.validate(page, config);
+      await test.step(check.name, async () => {
+        try {
+          await check.validate(page, config);
+        } catch (err: any) {
+          expect.soft(true, `Sub-check failed: ${err.message || String(err)}`).toBe(false);
+        }
+      });
     }
   }
 }

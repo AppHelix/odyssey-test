@@ -1,4 +1,4 @@
-import { Page, APIRequestContext, expect } from "@playwright/test";
+import { Page, APIRequestContext, expect, test } from "@playwright/test";
 import { FooterValidationConfig } from "../config/page-validation.config";
 import { HomePage } from "../pages/HomePage";
 import { isValidUrl, verifyHttpStatus } from "../utils/network";
@@ -45,7 +45,13 @@ export async function validateFooter(
   for (const checkType of ACTIVE_FOOTER_CHECKS) {
     const check = FOOTER_CHECK_REGISTRY[checkType];
     if (check) {
-      await check.validate(page, requestContext, config, checkExternalLinks, baseURL, homePage);
+      await test.step(check.name, async () => {
+        try {
+          await check.validate(page, requestContext, config, checkExternalLinks, baseURL, homePage);
+        } catch (err: any) {
+          expect.soft(true, `Sub-check failed: ${err.message || String(err)}`).toBe(false);
+        }
+      });
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Page, APIRequestContext, expect } from "@playwright/test";
+import { Page, APIRequestContext, expect, test } from "@playwright/test";
 import { verifyHttpStatus } from "../utils/network";
 
 export type HealthCheckType = "redirect" | "navigation";
@@ -45,7 +45,13 @@ export async function validatePageHealth(
 
     const check = HEALTH_CHECK_REGISTRY[checkType];
     if (check) {
-      await check.validate(page, requestContext, url, expectedStatus, expectedRedirectUrl, baseUrl);
+      await test.step(check.name, async () => {
+        try {
+          await check.validate(page, requestContext, url, expectedStatus, expectedRedirectUrl, baseUrl);
+        } catch (err: any) {
+          expect.soft(true, `Sub-check failed: ${err.message || String(err)}`).toBe(false);
+        }
+      });
     }
   }
 }
