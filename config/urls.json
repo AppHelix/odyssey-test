@@ -1,13 +1,24 @@
 [
   "/",
+  "/bachelors/microbachelors",
   "/bachelors",
   "/doctorate",
+  "/masters/micromasters",
   "/masters",
   "/about-us",
+  "/accessibility",
   "/become",
+  "/bio",
   "/certificates",
+  "/certificates/professional-certificate",
   "/contributor",
+  "/edx-privacy-policy/cookies",
+  "/edx-privacy-policy",
+  "/edx-terms-service",
+  "/executive-education",
+  "/googlecloud",
+  "/googlecloud/professional-certificates",
+  "/googlecloud/subject-areas",
   "/learn",
-  "/resources",
-  "/schools-partners"
+  "/modern-slavery-statement"
 ]

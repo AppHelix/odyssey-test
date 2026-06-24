@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { defaultConfig } from "../config/page-validation.config";
 import { pageValidationService, TargetUrlConfig } from "../services/page-validation.service";
+import { verifyHttpStatus } from "../utils/network";
 import fs from "fs";
 import path from "path";
 
@@ -65,45 +66,75 @@ const resolveTargetUrlsSync = (): TargetUrlConfig[] => {
 // Resolve target URLs synchronously during test definition compilation
 const targetUrls = resolveTargetUrlsSync();
 
-test.describe("Standalone Page Validation Suite", () => {
-  for (const pageConfig of targetUrls) {
-    test(`URL: ${pageConfig.url}`, async ({ page, request, baseURL }) => {
-      const targetBase = baseURL || "http://localhost:3001";
-      const expectedStatus = pageConfig.expectedStatus || 200;
-      const isRedirect = expectedStatus >= 300 && expectedStatus < 400;
+const enabledValidators = pageValidationService.getEnabledValidators();
+const isHealthOnly = enabledValidators.length === 1 && enabledValidators[0].type === "health";
 
-      console.log(`\n[Validation Framework] Evaluating URL: ${pageConfig.url} (Expected Status: ${expectedStatus})`);
+if (isHealthOnly) {
+  test.describe("Standalone Page Validation Suite (Health-Only Mode)", () => {
+    for (const pageConfig of targetUrls) {
+      test(`URL: ${pageConfig.url}`, async ({ request, baseURL }) => {
+        const targetBase = baseURL || "http://localhost:3001";
+        const expectedStatus = pageConfig.expectedStatus || 200;
+        const isRedirect = expectedStatus >= 300 && expectedStatus < 400;
 
-      const enabledValidators = pageValidationService.getEnabledValidators();
+        await test.step("HTTP Status & Health", async () => {
+          const stepName = isRedirect ? "HTTP Redirect Verification" : "Browser Navigation Health";
+          await test.step(stepName, async () => {
+            const result = await verifyHttpStatus(request, pageConfig.url, expectedStatus, {
+              baseUrl: targetBase,
+              maxRedirects: isRedirect ? 0 : undefined,
+            });
 
-      for (const validator of enabledValidators) {
-        if (isRedirect && validator.type !== "health") {
-          continue; // Skip content checks for redirects
-        }
+            expect(result.success, `Health check failed for ${pageConfig.url}: ${result.error}`).toBe(true);
 
-        console.log(`  -> Running validator: ${validator.name}`);
+            if (isRedirect && pageConfig.expectedRedirectUrl && result.headers) {
+              const location = result.headers["location"];
+              expect(location, `Redirect URL missing Location header`).toBeDefined();
 
-        await test.step(validator.name, async () => {
-          try {
+              const resolvedLocation = new URL(location!, targetBase).pathname;
+              const resolvedExpected = new URL(pageConfig.expectedRedirectUrl, targetBase).pathname;
+
+              expect(
+                resolvedLocation,
+                `Expected redirect location to be ${resolvedExpected}, but got ${resolvedLocation}`
+              ).toBe(resolvedExpected);
+            }
+          });
+        });
+      });
+    }
+  });
+} else {
+  test.describe("Standalone Page Validation Suite", () => {
+    for (const pageConfig of targetUrls) {
+      test(`URL: ${pageConfig.url}`, async ({ page, request, baseURL }) => {
+        const targetBase = baseURL || "http://localhost:3001";
+        const expectedStatus = pageConfig.expectedStatus || 200;
+        const isRedirect = expectedStatus >= 300 && expectedStatus < 400;
+
+        for (const validator of enabledValidators) {
+          if (isRedirect && validator.type !== "health") {
+            continue; // Skip content checks for redirects
+          }
+
+          await test.step(validator.name, async () => {
             // Lazy navigation: load the page if it's a content check and has not loaded yet
             if (validator.type !== "health" && page.url() === "about:blank") {
               const targetUrl = targetBase && !pageConfig.url.startsWith("http://") && !pageConfig.url.startsWith("https://")
                 ? new URL(pageConfig.url, targetBase).toString()
                 : pageConfig.url;
-              console.log(`     Navigating browser to: ${targetUrl}`);
               await page.goto(targetUrl);
-              await page.waitForLoadState("networkidle");
             }
 
-            await validator.validate(page, request, pageConfig, targetBase, pageValidationService);
-            console.log(`     [✓] ${validator.name} passed`);
-          } catch (err: any) {
-            console.log(`     [✗] ${validator.name} failed: ${err.message || String(err)}`);
-            // Use soft assertion to mark the step as failed without stopping execution of subsequent steps
-            expect.soft(true, `Validation step failed: ${err.message || String(err)}`).toBe(false);
-          }
-        });
-      }
-    });
-  }
-});
+            try {
+              await validator.validate(page, request, pageConfig, targetBase, pageValidationService);
+            } catch (err: any) {
+              // Use soft assertion to mark the step as failed without stopping execution of subsequent steps
+              expect.soft(true, `Validation step failed: ${err.message || String(err)}`).toBe(false);
+            }
+          });
+        }
+      });
+    }
+  });
+}
