@@ -5,11 +5,14 @@ import {
   SeoValidationConfig,
   HeaderValidationConfig,
   FooterValidationConfig,
+  SemanticValidationConfig,
+  ValidatorTypeName,
 } from "../config/page-validation.config";
 import { validatePageHealth } from "../validations/page-health.validator";
 import { validateSeo } from "../validations/seo.validator";
 import { validateHeader } from "../validations/header.validator";
 import { validateFooter } from "../validations/footer.validator";
+import { validateSemantic } from "../validations/semantic.validator";
 
 export interface TargetUrlConfig {
   url: string;
@@ -18,12 +21,21 @@ export interface TargetUrlConfig {
   seo?: Partial<SeoValidationConfig>;
   header?: Partial<HeaderValidationConfig>;
   footer?: Partial<FooterValidationConfig>;
+  semantic?: Partial<SemanticValidationConfig>;
 }
 
-export type ValidatorType = "health" | "seo" | "header" | "footer";
+export type ValidatorType = ValidatorTypeName;
+
+/**
+ * Which kind of test a validator belongs to. Today the framework only runs per-URL
+ * page validation; this field reserves a home for future sibling test types (e.g.
+ * "unit") so they can share the registry/reporter conventions without a refactor.
+ */
+export type TestCategory = "page-validation"; // future: | "unit" | "integration"
 
 export interface ValidatorDefinition {
   type: ValidatorType;
+  category: TestCategory;
   name: string;
   validate: (
     page: Page,
@@ -106,6 +118,28 @@ export class PageValidationService {
     await validateSeo(page, seoConfig);
   }
 
+  async validateSemanticOnly(page: Page, pageConfig: TargetUrlConfig): Promise<void> {
+    const d = this.config.semanticDefaults;
+    const o = pageConfig.semantic;
+    const semanticConfig: SemanticValidationConfig = {
+      document: { ...d.document!, ...o?.document },
+      headings: { ...d.headings!, ...o?.headings },
+      landmarks: {
+        ...d.landmarks!,
+        ...o?.landmarks,
+        landmarkSelectors: { ...d.landmarks?.landmarkSelectors, ...o?.landmarks?.landmarkSelectors },
+      },
+      media: { ...d.media!, ...o?.media },
+      links: { ...d.links!, ...o?.links },
+      forms: { ...d.forms!, ...o?.forms },
+      tables: { ...d.tables!, ...o?.tables },
+      ariaIntegrity: { ...d.ariaIntegrity!, ...o?.ariaIntegrity },
+      markup: { ...d.markup!, ...o?.markup },
+    };
+
+    await validateSemantic(page, semanticConfig);
+  }
+
   async validateHeaderOnly(
     page: Page,
     requestContext: APIRequestContext,
@@ -167,6 +201,7 @@ export class PageValidationService {
 const VALIDATOR_REGISTRY: Record<ValidatorType, ValidatorDefinition> = {
   health: {
     type: "health",
+    category: "page-validation",
     name: "HTTP Status & Health",
     validate: async (page, requestContext, pageConfig, baseURL, service) => {
       await service.validateHealthOnly(page, requestContext, pageConfig, baseURL);
@@ -174,6 +209,7 @@ const VALIDATOR_REGISTRY: Record<ValidatorType, ValidatorDefinition> = {
   },
   seo: {
     type: "seo",
+    category: "page-validation",
     name: "SEO Metadata",
     validate: async (page, requestContext, pageConfig, baseURL, service) => {
       await service.validateSeoOnly(page, pageConfig);
@@ -181,6 +217,7 @@ const VALIDATOR_REGISTRY: Record<ValidatorType, ValidatorDefinition> = {
   },
   header: {
     type: "header",
+    category: "page-validation",
     name: "Header Functionality",
     validate: async (page, requestContext, pageConfig, baseURL, service) => {
       await service.validateHeaderOnly(page, requestContext, pageConfig, baseURL);
@@ -188,9 +225,18 @@ const VALIDATOR_REGISTRY: Record<ValidatorType, ValidatorDefinition> = {
   },
   footer: {
     type: "footer",
+    category: "page-validation",
     name: "Footer Functionality",
     validate: async (page, requestContext, pageConfig, baseURL, service) => {
       await service.validateFooterOnly(page, requestContext, pageConfig, baseURL);
+    },
+  },
+  semantic: {
+    type: "semantic",
+    category: "page-validation",
+    name: "Semantic HTML Structure",
+    validate: async (page, requestContext, pageConfig, baseURL, service) => {
+      await service.validateSemanticOnly(page, pageConfig);
     },
   },
 };

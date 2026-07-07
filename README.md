@@ -30,7 +30,8 @@ validation-framework/
 │   ├── page-health.validator.ts   # HTTP status codes and redirect location checks
 │   ├── seo.validator.ts           # HTML meta tags, Open Graph, and Twitter Card checks
 │   ├── header.validator.ts        # Logo, navigation, mega-menu, and search checks
-│   └── footer.validator.ts        # Footer sections, social links, locale, and copyright checks
+│   ├── footer.validator.ts        # Footer sections, social links, locale, and copyright checks
+│   └── semantic.validator.ts      # Deterministic semantic-HTML structure & accessibility checks
 ├── .env                           # Environment configuration (BASE_URL, USE_SITEMAP, etc.)
 ├── package.json                   # NPM package and scripts
 ├── playwright.config.ts           # Playwright runner settings
@@ -97,7 +98,7 @@ All runtime behavior is controlled via the `.env` file in the framework root:
 | `USE_SITEMAP` | `false` | `true` to discover URLs from sitemap; `false` to use `config/urls.json` |
 | `SITEMAP_PATH` | `/sitemap.xml` | Path to the sitemap endpoint, relative to `BASE_URL` |
 | `URLS_FILE` | `config/urls.json` | Path to the manual URL list file (used when `USE_SITEMAP=false`) |
-| `ACTIVE_VALIDATORS` | `health,seo,header,footer` | Comma-separated list of validators to enable |
+| `ACTIVE_VALIDATORS` | `health,seo,header,footer,semantic` | Comma-separated list of validators to enable |
 
 ### Example `.env`
 
@@ -105,14 +106,14 @@ All runtime behavior is controlled via the `.env` file in the framework root:
 BASE_URL=https://odyssey.stage.edx.org/
 USE_SITEMAP=true
 SITEMAP_PATH=/sitemap.xml
-ACTIVE_VALIDATORS=health,seo,header,footer
+ACTIVE_VALIDATORS=health,seo,header,footer,semantic
 ```
 
 ---
 
 ## 🛡️ Validators
 
-The framework runs four validation layers sequentially per page. Each layer can be independently toggled via `ACTIVE_VALIDATORS`:
+The framework runs the enabled validation layers sequentially per page. Each layer can be independently toggled via `ACTIVE_VALIDATORS`:
 
 | Validator | Key | File |
 | :--- | :--- | :--- |
@@ -120,8 +121,40 @@ The framework runs four validation layers sequentially per page. Each layer can 
 | SEO Metadata | `seo` | `validations/seo.validator.ts` |
 | Header Functionality | `header` | `validations/header.validator.ts` |
 | Footer Functionality | `footer` | `validations/footer.validator.ts` |
+| Semantic HTML Structure | `semantic` | `validations/semantic.validator.ts` |
 
 > Redirect pages (3xx) only run the `health` validator — content checks are automatically skipped.
+
+### Semantic HTML Structure validator
+
+A **deterministic** (no LLM) validator that checks whether the rendered markup is semantically well-formed and accessibility-friendly. It is configured under `semanticDefaults` in `config/page-validation.config.ts`; every sub-check has a `required` gate and per-rule boolean toggles, and per-URL overrides are supported via a `semantic` block on manual URL entries. Sub-checks:
+
+| Sub-check | What it validates |
+| :--- | :--- |
+| Document Structure | `<!DOCTYPE html>`, valid `<html lang>`, single non-empty `<title>`, `<meta charset>` + `<meta name="viewport">` |
+| Heading Hierarchy Structure | Exactly one `<h1>`, no skipped heading levels, no empty headings |
+| Landmark Regions | Presence of `main`/`nav`/`banner`/`contentinfo`, single `main`, distinct names for duplicate landmarks |
+| Image & Media Alternatives | `<img>` alt text (decorative `alt=""` allowed, no filename alt), `<iframe>` titles |
+| Link Integrity | Discernible link text, no href-less anchors, `rel="noopener"` on `target="_blank"` |
+| Form Control Labels | Every input/select/textarea has an accessible name (auto-skips pages with no controls) |
+| Table Semantics | Data tables use `<th>` + scope/`headers=` associations (auto-skips pages with no tables) |
+| ARIA & ID Integrity | Unique ids, valid roles, resolvable aria references, no aria-hidden focusables, no positive tabindex |
+| Interactive & List Markup | `<li>` nesting, no nested interactive elements, focusable `role="button"`, named buttons |
+
+Some stricter rules ship **disabled by default** to avoid false positives (e.g. `requireContentInLandmarks`, `requireSvgAccessibleName`, `disallowAmbiguousText`, `noRedundantRoles`); enable them in config as needed.
+
+**Three-level registry (validator → section → rule).** The nine rows above are *sections*; each section contains individually toggleable *rules* (e.g. the `headings` section holds `requireH1`, `requireSingleH1`, `enforceNoSkippedLevels`, `disallowEmptyHeadings`). Both the **section list** and the **rules** live in one place — `SEMANTIC_SECTION_REGISTRY` in `validations/semantic.validator.ts` — which is the single source of truth. The section-key type, the full section list, the `ACTIVE_SEMANTIC_CHECKS` env validation, and the report rows + remediation are all *derived* from that registry, so add/remove/toggle flows through automatically.
+
+- **Toggle a whole section** via the `ACTIVE_SEMANTIC_CHECKS` env var (comma-separated, case-insensitive; defaults to all):
+  ```ini
+  # Run only the heading, landmark, and ARIA/ID sections
+  ACTIVE_SEMANTIC_CHECKS=headings,landmarks,ariaIntegrity
+  ```
+- **Toggle an individual rule** by flipping its boolean flag in `semanticDefaults` (`config/page-validation.config.ts`), or per-URL via a `semantic` override. Disabled rules disappear from both the run and the report.
+- **Add a new rule**: push an entry (`{ key, name, remediation, enabled, evaluate }`) onto that section's `rules` array in the registry (and add its flag to the section's config). It runs and appears in the report automatically.
+- **Add / remove a whole section**: add or delete one entry in `SEMANTIC_SECTION_REGISTRY` (validator). The section-key type and list update automatically. When adding, also add its config *shape* + `semanticDefaults` block in `config/page-validation.config.ts` (per-section defaults naturally live in config); when removing, its now-unused defaults can be deleted.
+
+**Try it offline:** the mock server exposes `/semantic-good` (passes every default-on rule) and `/semantic-bad` (violates them). Run with `BASE_URL=http://localhost:3001`, `USE_SITEMAP=false`, `URLS_FILE=config/semantic-verify-urls.json`, `ACTIVE_VALIDATORS=semantic`.
 
 ---
 
