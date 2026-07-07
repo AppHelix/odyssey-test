@@ -43,8 +43,10 @@ export async function validateSeo(
 
 /**
  * Registry mapping SEO check types to their respective validation logic.
+ * Exported so the validator self-test can exercise each sub-check in isolation
+ * (mirrors SEMANTIC_SECTION_REGISTRY in semantic.validator.ts).
  */
-const SEO_CHECK_REGISTRY: Record<SeoCheckType, SeoCheckDefinition> = {
+export const SEO_CHECK_REGISTRY: Record<SeoCheckType, SeoCheckDefinition> = {
   title: {
     type: "title",
     name: "Page Title Tag",

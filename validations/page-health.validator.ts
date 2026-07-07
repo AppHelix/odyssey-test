@@ -58,8 +58,9 @@ export async function validatePageHealth(
 
 /**
  * Registry mapping health check types to their respective execution logic.
+ * Exported so the validator self-test can exercise each sub-check in isolation.
  */
-const HEALTH_CHECK_REGISTRY: Record<HealthCheckType, HealthCheckDefinition> = {
+export const HEALTH_CHECK_REGISTRY: Record<HealthCheckType, HealthCheckDefinition> = {
   redirect: {
     type: "redirect",
     name: "HTTP Redirect Verification",
