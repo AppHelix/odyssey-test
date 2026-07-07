@@ -88,6 +88,41 @@ npm run test:report
 
 ---
 
+## 📊 Reports
+
+Beyond Playwright's built-in `list` and `html` reporters, the framework emits its own
+per-validator validation reports into `test-results/`. Choose the format with the
+`REPORT_FORMAT` variable in `.env`:
+
+| `REPORT_FORMAT` | Output in `test-results/` | Notes |
+| :--- | :--- | :--- |
+| `md` *(default)* | `health-`, `seo-`, `header-`, `footer-`, `semantic-validation-report.md` | One Markdown file per validator; lists failed/passed URLs + remediation per sub-test |
+| `excel` | `validation-report.xlsx` | One workbook: a **Summary** sheet plus one sheet per validator that ran |
+| `both` | all of the above | Emits Markdown and Excel together |
+
+The Excel workbook is a `URL × sub-test` matrix per validator:
+
+- Each validator gets its own sheet; rows are URLs, columns are sub-tests.
+- Cells are colour-coded **Pass** (green) / **Fail** (red) / **N/A** (grey — the sub-test
+  didn't apply to that URL, e.g. content checks skipped for a redirect).
+- The header row is frozen and filterable; each sub-test header carries its **remediation
+  guidance as a cell note** (hover to read).
+- The **Summary** sheet totals URLs tested, passes, fails, and pass-rate per validator.
+
+Both formats are driven by the same collected results, so they always agree. Adding,
+removing, or toggling a validator or semantic rule flows into every format automatically.
+
+> Switching format is a `.env` change (like `ACTIVE_VALIDATORS`): the config loads `.env`
+> with `override: true`, so it is the single source of truth — set `REPORT_FORMAT` there
+> rather than as a shell variable.
+
+**Implementation** (`tests/reporters/`): a shared `BaseValidationReporter`
+(`report-data.ts`) collects the pass/fail matrix from test steps; `markdown-reporter.ts`
+and `excel-reporter.ts` subclass it to serialize each format. `playwright.config.ts`
+selects the active reporter(s) from `REPORT_FORMAT`.
+
+---
+
 ## ⚙️ Environment Configuration
 
 All runtime behavior is controlled via the `.env` file in the framework root:
@@ -99,6 +134,7 @@ All runtime behavior is controlled via the `.env` file in the framework root:
 | `SITEMAP_PATH` | `/sitemap.xml` | Path to the sitemap endpoint, relative to `BASE_URL` |
 | `URLS_FILE` | `config/urls.json` | Path to the manual URL list file (used when `USE_SITEMAP=false`) |
 | `ACTIVE_VALIDATORS` | `health,seo,header,footer,semantic` | Comma-separated list of validators to enable |
+| `REPORT_FORMAT` | `md` | Custom report format: `md`, `excel`, or `both` (see [Reports](#-reports)) |
 
 ### Example `.env`
 
@@ -107,6 +143,7 @@ BASE_URL=https://odyssey.stage.edx.org/
 USE_SITEMAP=true
 SITEMAP_PATH=/sitemap.xml
 ACTIVE_VALIDATORS=health,seo,header,footer,semantic
+REPORT_FORMAT=md
 ```
 
 ---
