@@ -55,8 +55,9 @@ export async function validateHeader(
 
 /**
  * Registry mapping header check types to their respective validation logic.
+ * Exported so the validator self-test can exercise each sub-check in isolation.
  */
-const HEADER_CHECK_REGISTRY: Record<HeaderCheckType, HeaderCheckDefinition> = {
+export const HEADER_CHECK_REGISTRY: Record<HeaderCheckType, HeaderCheckDefinition> = {
   container: {
     type: "container",
     name: "Header Container Visibility",

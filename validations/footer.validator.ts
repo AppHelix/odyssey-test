@@ -58,8 +58,9 @@ export async function validateFooter(
 
 /**
  * Registry mapping footer check types to their respective validation logic.
+ * Exported so the validator self-test can exercise each sub-check in isolation.
  */
-const FOOTER_CHECK_REGISTRY: Record<FooterCheckType, FooterCheckDefinition> = {
+export const FOOTER_CHECK_REGISTRY: Record<FooterCheckType, FooterCheckDefinition> = {
   container: {
     type: "container",
     name: "Footer Container Visibility",
