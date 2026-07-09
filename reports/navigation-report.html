@@ -1,0 +1,1214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Navigation Validation Report</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body {
+        height: 100%;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: #fff;
+        color: #000;
+        line-height: 1;
+      }
+
+      .header {
+        background: #333;
+        color: white;
+        padding: 8px 16px;
+        box-shadow: none;
+      }
+
+      .header-content {
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+
+      .header h1 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        letter-spacing: 0;
+      }
+
+      .summary-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 8px;
+        margin-bottom: 0;
+      }
+
+      .summary-stat {
+        background: #444;
+        border: none;
+        border-radius: 0;
+        padding: 6px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .summary-stat-label {
+        font-size: 9px;
+        font-weight: 600;
+        opacity: 1;
+        text-transform: uppercase;
+        letter-spacing: 0;
+      }
+
+      .summary-stat-value {
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .success-rate {
+        color: #fff;
+        font-size: 14px;
+      }
+
+      .main-container {
+        display: flex;
+        height: calc(100vh - 120px);
+        max-width: 1600px;
+        margin: 8px auto;
+        gap: 8px;
+        padding: 0 8px;
+      }
+
+      .left-panel {
+        width: 180px;
+        background: white;
+        border-radius: 0;
+        overflow-y: auto;
+        padding: 6px;
+        box-shadow: none;
+        flex-shrink: 0;
+      }
+
+      .left-panel::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .left-panel::-webkit-scrollbar-track {
+        background: #f0f0f0;
+        border-radius: 0;
+      }
+
+      .left-panel::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 0;
+      }
+
+      .left-panel::-webkit-scrollbar-thumb:hover {
+        background: #999;
+      }
+
+      .label-nav-item {
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        background: #f5f5f5;
+        border: 1px solid #ddd;
+        border-radius: 0;
+        cursor: pointer;
+        transition: none;
+        border-left: 3px solid #ccc;
+      }
+
+      .label-nav-item:hover {
+        background: #eee;
+        border-color: #999;
+        box-shadow: none;
+      }
+
+      .label-nav-item.active {
+        background: #e8e8e8;
+        border-color: #333;
+        border-left-color: #333;
+        box-shadow: none;
+      }
+
+      .label-name {
+        font-weight: 700;
+        color: #000;
+        margin-bottom: 2px;
+        font-size: 11px;
+      }
+
+      .label-stats {
+        font-size: 9px;
+        color: #666;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .stat-passed {
+        color: #000;
+      }
+
+      .stat-total {
+        color: #000;
+      }
+
+      .stat-separator {
+        color: #999;
+      }
+
+      .right-panel {
+        flex: 1;
+        background: white;
+        border-radius: 0;
+        overflow: hidden;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .content-panel {
+        display: none;
+        flex: 1;
+        overflow-y: auto;
+        flex-direction: column;
+      }
+
+      .content-panel.active {
+        display: flex;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 8px;
+        border-bottom: 1px solid #ccc;
+        background: #f5f5f5;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .header-left h2 {
+        font-size: 11px;
+        color: #000;
+        font-weight: 700;
+      }
+
+      .header-right {
+        display: flex;
+        gap: 12px;
+      }
+
+      .panel-stats {
+        display: flex;
+        gap: 8px;
+      }
+
+      .stat-box {
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 0;
+        padding: 3px 6px;
+        text-align: center;
+        min-width: 70px;
+        box-shadow: none;
+      }
+
+      .stat-box.passed {
+        border-color: #ccc;
+        background: #f0f0f0;
+      }
+
+      .stat-box.failed {
+        border-color: #ccc;
+        background: #f0f0f0;
+      }
+
+      .stat-number {
+        font-size: 12px;
+        font-weight: 700;
+        color: #000;
+        line-height: 1;
+      }
+
+      .stat-box.passed .stat-number {
+        color: #000;
+      }
+
+      .stat-box.failed .stat-number {
+        color: #000;
+      }
+
+      .stat-label {
+        font-size: 7px;
+        color: #333;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0;
+        margin-top: 1px;
+        line-height: 1;
+      }
+
+      .table-wrapper {
+        flex: 1;
+        overflow: auto;
+        padding: 0;
+      }
+
+      .table-wrapper::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      .table-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      .table-wrapper::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 3px;
+      }
+
+      .table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #a0aec0;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        border-spacing: 0;
+        font-size: 11px;
+        line-height: 1;
+      }
+
+      .data-table thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .data-table th {
+        background: #333;
+        color: white;
+        font-weight: 600;
+        padding: 2px 4px;
+        text-align: left;
+        border-bottom: 1px solid #333;
+        font-size: 10px;
+        line-height: 1;
+        height: 18px;
+      }
+
+      .sno-header, .reason-header {
+        min-width: 80px;
+      }
+
+      .label-header {
+        min-width: 90px;
+      }
+
+      .data-table td {
+        padding: 2px 4px;
+        border-bottom: 1px solid #ddd;
+        vertical-align: middle;
+        height: 16px;
+        line-height: 1;
+      }
+
+      .data-row {
+      }
+
+      .status-pass {
+        background-color: #90EE90;
+      }
+
+      .status-fail {
+        background-color: #FFB6C6;
+      }
+
+      .sno-cell {
+        font-weight: 600;
+        min-width: 40px;
+        font-size: 10px;
+        padding: 2px 4px !important;
+      }
+
+      .label-cell {
+        font-weight: 600;
+        padding: 2px 4px !important;
+      }
+
+      .label-badge {
+        padding: 1px 4px;
+        font-weight: 600;
+        font-size: 9px;
+      }
+
+      .url-cell {
+        max-width: 180px;
+        padding: 2px 4px !important;
+      }
+
+      .url-link {
+        color: #0066cc;
+        text-decoration: underline;
+        display: inline;
+        font-size: 9px;
+        word-break: break-word;
+      }
+
+      .url-link:hover {
+        text-decoration: underline;
+      }
+
+      .status-cell {
+        font-weight: 700;
+        text-align: center;
+        min-width: 70px;
+        padding: 2px 4px !important;
+        font-size: 9px;
+        line-height: 1;
+      }
+
+      .status-pass {
+        color: #000;
+        background: #90EE90;
+      }
+
+      .status-fail {
+        color: #000;
+        background: #FFB6C6;
+      }
+
+      .status-skipped {
+        color: #000;
+        background: #FFFFE0;
+        cursor: help;
+      }
+
+      .reason-cell {
+        color: #333;
+        font-size: 9px;
+        max-width: 250px;
+        padding: 2px 4px !important;
+      }
+
+      .failure-reason {
+        color: #000;
+        padding: 1px 2px;
+        font-size: 8px;
+      }
+
+      .footer {
+        background: white;
+        border-top: 1px solid #ddd;
+        padding: 6px 12px;
+        font-size: 10px;
+        color: #666;
+        text-align: center;
+        margin-top: auto;
+      }
+
+      @media (max-width: 1400px) {
+        .main-container {
+          flex-direction: column;
+          height: auto;
+          max-height: calc(100vh - 150px);
+        }
+
+        .left-panel {
+          width: 100%;
+          max-height: 100px;
+          display: flex;
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding: 4px;
+        }
+
+        .label-nav-item {
+          flex: 0 0 auto;
+          min-width: 120px;
+          margin-right: 6px;
+          margin-bottom: 0;
+        }
+
+        .right-panel {
+          height: auto;
+        }
+
+        .panel-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+          padding: 4px 8px;
+        }
+
+        .header-right {
+          width: 100%;
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+
+        .panel-stats {
+          width: 100%;
+          flex-wrap: wrap;
+        }
+
+        .stat-box {
+          flex: 0 1 60px;
+          min-width: 60px;
+        }
+
+        .data-table {
+          font-size: 10px;
+        }
+
+        .data-table th,
+        .data-table td {
+          padding: 2px 3px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .header {
+          padding: 6px 10px;
+        }
+
+        .header h1 {
+          font-size: 13px;
+          margin-bottom: 3px;
+        }
+
+        .summary-stats {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 6px;
+        }
+
+        .summary-stat {
+          padding: 4px 6px;
+        }
+
+        .data-table {
+          font-size: 9px;
+        }
+
+        .data-table th,
+        .data-table td {
+          padding: 2px 3px;
+        }
+
+        .url-link {
+          font-size: 8px;
+        }
+
+        .url-cell {
+          max-width: 120px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="header-content">
+        <h1>🧭 Navigation Validation Report</h1>
+        <div class="summary-stats">
+          <div class="summary-stat">
+            <div class="summary-stat-label">Total Tests</div>
+            <div class="summary-stat-value">30</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-label">Passed</div>
+            <div class="summary-stat-value" style="color: #4ade80;">4</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-label">Failed</div>
+            <div class="summary-stat-value" style="color: #f87171;">26</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-label">Success Rate</div>
+            <div class="summary-stat-value success-rate">13%</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-label">Levels Tested</div>
+            <div class="summary-stat-value">3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <div class="left-panel">
+        
+        <div class="label-nav-item active" data-label="become" onclick="showLabel('become')">
+          <div class="label-name">Become</div>
+          <div class="label-stats">
+            <span class="stat-passed">1</span>
+            <span class="stat-separator">/</span>
+            <span class="stat-total">10</span>
+          </div>
+        </div>
+
+        <div class="label-nav-item " data-label="degrees" onclick="showLabel('degrees')">
+          <div class="label-name">Degrees</div>
+          <div class="label-stats">
+            <span class="stat-passed">1</span>
+            <span class="stat-separator">/</span>
+            <span class="stat-total">10</span>
+          </div>
+        </div>
+
+        <div class="label-nav-item " data-label="learn" onclick="showLabel('learn')">
+          <div class="label-name">Learn</div>
+          <div class="label-stats">
+            <span class="stat-passed">2</span>
+            <span class="stat-separator">/</span>
+            <span class="stat-total">10</span>
+          </div>
+        </div>
+      </div>
+      <div class="right-panel">
+        
+      <div id="become" class="content-panel active">
+        <div class="panel-header">
+          <div class="header-left">
+            <h2>Become</h2>
+          </div>
+          <div class="header-right">
+            <div class="panel-stats">
+              <div class="stat-box">
+                <div class="stat-number">10</div>
+                <div class="stat-label">Total</div>
+              </div>
+              <div class="stat-box passed">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Passed</div>
+              </div>
+              <div class="stat-box failed">
+                <div class="stat-number">9</div>
+                <div class="stat-label">Failed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="sno-header">S.No</th>
+                <th class="label-header">Label</th>
+                
+      <th>Level_1</th>
+      <th>Status</th>
+
+      <th>Level_2</th>
+      <th>Status</th>
+
+      <th>Level_3</th>
+      <th>Status</th>
+                <th class="reason-header">Failure Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+          <tr class="data-row status-fail">
+            <td class="sno-cell">1</td>
+            <td class="label-cell"><span class="label-badge">Become</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become">🔗 https://odyssey.stage.edx.org/become</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/data-scientist" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/data-scientist">🔗 https://odyssey.stage.edx.org/become/data-scien...</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/data-scientist/data-science-salary-by-state" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/data-scientist/data-science-salary-by-state">🔗 https://odyssey.stage.edx.org/become/data-scien...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">2</td>
+            <td class="label-cell"><span class="label-badge">Become</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become">🔗 https://odyssey.stage.edx.org/become</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/data-scientist" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/data-scientist">🔗 https://odyssey.stage.edx.org/become/data-scien...</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/data-scientist/typical-day-of-a-data-scientist" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/data-scientist/typical-day-of-a-data-scientist">🔗 https://odyssey.stage.edx.org/become/data-scien...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">3</td>
+            <td class="label-cell"><span class="label-badge">Become</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become">🔗 https://odyssey.stage.edx.org/become</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/software-engineer" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/software-engineer">🔗 https://odyssey.stage.edx.org/become/software-e...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/software-engineer/software-engineer-salary-by-state" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/software-engineer/software-engineer-salary-by-state">🔗 https://odyssey.stage.edx.org/become/software-e...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">4</td>
+            <td class="label-cell"><span class="label-badge">Become</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become">🔗 https://odyssey.stage.edx.org/become</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/software-engineer" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/software-engineer">🔗 https://odyssey.stage.edx.org/become/software-e...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/software-engineer/typical-day-of-a-software-engineer" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/software-engineer/typical-day-of-a-software-engineer">🔗 https://odyssey.stage.edx.org/become/software-e...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">5</td>
+            <td class="label-cell"><span class="label-badge">Become</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become">🔗 https://odyssey.stage.edx.org/become</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/ai-careers" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/ai-careers">🔗 https://odyssey.stage.edx.org/become/ai-careers</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell">-</td>
+            <td class="status-cell">-</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">6</td>
+            <td class="label-cell"><span class="label-badge">Become</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become">🔗 https://odyssey.stage.edx.org/become</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/computer-engineer" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/computer-engineer">🔗 https://odyssey.stage.edx.org/become/computer-e...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell">-</td>
+            <td class="status-cell">-</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-pass">
+            <td class="sno-cell">7</td>
+            <td class="label-cell"><span class="label-badge">Become</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become">🔗 https://odyssey.stage.edx.org/become</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/cybersecurity-analyst" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/cybersecurity-analyst">🔗 https://odyssey.stage.edx.org/become/cybersecur...</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell">-</td>
+            <td class="status-cell">-</td>
+            <td class="reason-cell"></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">8</td>
+            <td class="label-cell"><span class="label-badge">Become</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become">🔗 https://odyssey.stage.edx.org/become</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/data-analyst" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/data-analyst">🔗 https://odyssey.stage.edx.org/become/data-analyst</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell">-</td>
+            <td class="status-cell">-</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">9</td>
+            <td class="label-cell"><span class="label-badge">Become</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become">🔗 https://odyssey.stage.edx.org/become</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/data-scientist" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/data-scientist">🔗 https://odyssey.stage.edx.org/become/data-scien...</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell">-</td>
+            <td class="status-cell">-</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">10</td>
+            <td class="label-cell"><span class="label-badge">Become</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become">🔗 https://odyssey.stage.edx.org/become</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/become/digital-marketer" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/become/digital-marketer">🔗 https://odyssey.stage.edx.org/become/digital-ma...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell">-</td>
+            <td class="status-cell">-</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="degrees" class="content-panel ">
+        <div class="panel-header">
+          <div class="header-left">
+            <h2>Degrees</h2>
+          </div>
+          <div class="header-right">
+            <div class="panel-stats">
+              <div class="stat-box">
+                <div class="stat-number">10</div>
+                <div class="stat-label">Total</div>
+              </div>
+              <div class="stat-box passed">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Passed</div>
+              </div>
+              <div class="stat-box failed">
+                <div class="stat-number">9</div>
+                <div class="stat-label">Failed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="sno-header">S.No</th>
+                <th class="label-header">Label</th>
+                
+      <th>Level_1</th>
+      <th>Status</th>
+
+      <th>Level_2</th>
+      <th>Status</th>
+
+      <th>Level_3</th>
+      <th>Status</th>
+                <th class="reason-header">Failure Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+          <tr class="data-row status-pass">
+            <td class="sno-cell">1</td>
+            <td class="label-cell"><span class="label-badge">Degrees</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors">🔗 https://odyssey.stage.edx.org/bachelors</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/business" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/business">🔗 https://odyssey.stage.edx.org/bachelors/business</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/business/morehouse-bachelor-of-arts-in-applied-management-studies" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/business/morehouse-bachelor-of-arts-in-applied-management-studies">🔗 https://odyssey.stage.edx.org/bachelors/busines...</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+            <td class="reason-cell"></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">2</td>
+            <td class="label-cell"><span class="label-badge">Degrees</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors">🔗 https://odyssey.stage.edx.org/bachelors</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors/doanex-business-and-professional-communication-for-success" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors/doanex-business-and-professional-communication-for-success">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">3</td>
+            <td class="label-cell"><span class="label-badge">Degrees</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors">🔗 https://odyssey.stage.edx.org/bachelors</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors/harvardx-introduction-to-neuroscience" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors/harvardx-introduction-to-neuroscience">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">4</td>
+            <td class="label-cell"><span class="label-badge">Degrees</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors">🔗 https://odyssey.stage.edx.org/bachelors</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors/harvardx-university-chemistry" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors/harvardx-university-chemistry">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">5</td>
+            <td class="label-cell"><span class="label-badge">Degrees</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors">🔗 https://odyssey.stage.edx.org/bachelors</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors/ibm-full-stack-application-development" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors/ibm-full-stack-application-development">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">6</td>
+            <td class="label-cell"><span class="label-badge">Degrees</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors">🔗 https://odyssey.stage.edx.org/bachelors</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors/lse-mathematics-and-statistics-fundamentals" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors/lse-mathematics-and-statistics-fundamentals">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">7</td>
+            <td class="label-cell"><span class="label-badge">Degrees</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors">🔗 https://odyssey.stage.edx.org/bachelors</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors/lse-statistics-fundamentals" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors/lse-statistics-fundamentals">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">8</td>
+            <td class="label-cell"><span class="label-badge">Degrees</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors">🔗 https://odyssey.stage.edx.org/bachelors</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors/mgh-institute-chemistry-for-the-health-professions" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors/mgh-institute-chemistry-for-the-health-professions">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">9</td>
+            <td class="label-cell"><span class="label-badge">Degrees</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors">🔗 https://odyssey.stage.edx.org/bachelors</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors/mgh-institute-statistics-for-the-health-professions" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors/mgh-institute-statistics-for-the-health-professions">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">10</td>
+            <td class="label-cell"><span class="label-badge">Degrees</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors">🔗 https://odyssey.stage.edx.org/bachelors</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/bachelors/microbachelors/tesu-information-literacy" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/bachelors/microbachelors/tesu-information-literacy">🔗 https://odyssey.stage.edx.org/bachelors/microba...</a></td>
+            <td class="status-cell status-pending" >PENDING</td>
+            <td class="reason-cell"><span class="failure-reason">Level_2 URL not found on Level_1 page</span></td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="learn" class="content-panel ">
+        <div class="panel-header">
+          <div class="header-left">
+            <h2>Learn</h2>
+          </div>
+          <div class="header-right">
+            <div class="panel-stats">
+              <div class="stat-box">
+                <div class="stat-number">10</div>
+                <div class="stat-label">Total</div>
+              </div>
+              <div class="stat-box passed">
+                <div class="stat-number">2</div>
+                <div class="stat-label">Passed</div>
+              </div>
+              <div class="stat-box failed">
+                <div class="stat-number">8</div>
+                <div class="stat-label">Failed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="sno-header">S.No</th>
+                <th class="label-header">Label</th>
+                
+      <th>Level_1</th>
+      <th>Status</th>
+
+      <th>Level_2</th>
+      <th>Status</th>
+
+      <th>Level_3</th>
+      <th>Status</th>
+                <th class="reason-header">Failure Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+          <tr class="data-row status-fail">
+            <td class="sno-cell">1</td>
+            <td class="label-cell"><span class="label-badge">Learn</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn">🔗 https://odyssey.stage.edx.org/learn</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/5g" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/5g">🔗 https://odyssey.stage.edx.org/learn/5g</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/5g/curtin-university-5g-deployment" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/5g/curtin-university-5g-deployment">🔗 https://odyssey.stage.edx.org/learn/5g/curtin-u...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">2</td>
+            <td class="label-cell"><span class="label-badge">Learn</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn">🔗 https://odyssey.stage.edx.org/learn</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/5g" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/5g">🔗 https://odyssey.stage.edx.org/learn/5g</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/5g/curtin-university-5g-essentials" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/5g/curtin-university-5g-essentials">🔗 https://odyssey.stage.edx.org/learn/5g/curtin-u...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+
+          <tr class="data-row status-pass">
+            <td class="sno-cell">3</td>
+            <td class="label-cell"><span class="label-badge">Learn</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn">🔗 https://odyssey.stage.edx.org/learn</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/5g" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/5g">🔗 https://odyssey.stage.edx.org/learn/5g</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/5g/the-linux-foundation-open-source-and-the-5g-transition" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/5g/the-linux-foundation-open-source-and-the-5g-transition">🔗 https://odyssey.stage.edx.org/learn/5g/the-linu...</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+            <td class="reason-cell"></td>
+          </tr>
+
+          <tr class="data-row status-pass">
+            <td class="sno-cell">4</td>
+            <td class="label-cell"><span class="label-badge">Learn</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn">🔗 https://odyssey.stage.edx.org/learn</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/abnormal-psychology" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/abnormal-psychology">🔗 https://odyssey.stage.edx.org/learn/abnormal-ps...</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/abnormal-psychology/doane-university-abnormal-psychology" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/abnormal-psychology/doane-university-abnormal-psychology">🔗 https://odyssey.stage.edx.org/learn/abnormal-ps...</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+            <td class="reason-cell"></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">5</td>
+            <td class="label-cell"><span class="label-badge">Learn</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn">🔗 https://odyssey.stage.edx.org/learn</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accessibility" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accessibility">🔗 https://odyssey.stage.edx.org/learn/accessibility</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accessibility/edx-video-clip-accessibility-in-design" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accessibility/edx-video-clip-accessibility-in-design">🔗 https://odyssey.stage.edx.org/learn/accessibili...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">6</td>
+            <td class="label-cell"><span class="label-badge">Learn</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn">🔗 https://odyssey.stage.edx.org/learn</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accessibility" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accessibility">🔗 https://odyssey.stage.edx.org/learn/accessibility</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accessibility/universitat-politecnica-de-valencia-tecnologia-accesible-para-la-inclusion" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accessibility/universitat-politecnica-de-valencia-tecnologia-accesible-para-la-inclusion">🔗 https://odyssey.stage.edx.org/learn/accessibili...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">7</td>
+            <td class="label-cell"><span class="label-badge">Learn</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn">🔗 https://odyssey.stage.edx.org/learn</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accounting" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accounting">🔗 https://odyssey.stage.edx.org/learn/accounting</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accounting/acca-introduction-to-management-accounting" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accounting/acca-introduction-to-management-accounting">🔗 https://odyssey.stage.edx.org/learn/accounting/...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">8</td>
+            <td class="label-cell"><span class="label-badge">Learn</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn">🔗 https://odyssey.stage.edx.org/learn</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accounting" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accounting">🔗 https://odyssey.stage.edx.org/learn/accounting</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accounting/imperial-college-business-school-accounting-essentials" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accounting/imperial-college-business-school-accounting-essentials">🔗 https://odyssey.stage.edx.org/learn/accounting/...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">9</td>
+            <td class="label-cell"><span class="label-badge">Learn</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn">🔗 https://odyssey.stage.edx.org/learn</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accounting" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accounting">🔗 https://odyssey.stage.edx.org/learn/accounting</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accounting/indian-institute-of-management-bangalore-accounting-for-decision-making" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accounting/indian-institute-of-management-bangalore-accounting-for-decision-making">🔗 https://odyssey.stage.edx.org/learn/accounting/...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+
+          <tr class="data-row status-fail">
+            <td class="sno-cell">10</td>
+            <td class="label-cell"><span class="label-badge">Learn</span></td>
+            
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn">🔗 https://odyssey.stage.edx.org/learn</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accounting" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accounting">🔗 https://odyssey.stage.edx.org/learn/accounting</a></td>
+            <td class="status-cell status-pass" >PASS</td>
+
+            <td class="url-cell"><a href="https://odyssey.stage.edx.org/learn/accounting/indian-institute-of-management-bangalore-introduction-to-accounting-part-1-basics-of-financial-statements" target="_blank" rel="noopener noreferrer" class="url-link" title="https://odyssey.stage.edx.org/learn/accounting/indian-institute-of-management-bangalore-introduction-to-accounting-part-1-basics-of-financial-statements">🔗 https://odyssey.stage.edx.org/learn/accounting/...</a></td>
+            <td class="status-cell status-fail" >FAIL</td>
+            <td class="reason-cell"><span class="failure-reason">Level_3 URL not found on Level_2 page</span></td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>📊 Report generated on <strong>7/8/2026, 9:27:57 AM</strong> | Navigation Validation Framework</p>
+    </div>
+
+    <script>
+      function showLabel(labelId) {
+        // Hide all panels
+        document.querySelectorAll('.content-panel').forEach(panel => {
+          panel.classList.remove('active');
+        });
+
+        // Remove active class from all nav items
+        document.querySelectorAll('.label-nav-item').forEach(item => {
+          item.classList.remove('active');
+        });
+
+        // Show selected panel
+        const panel = document.getElementById(labelId);
+        if (panel) {
+          panel.classList.add('active');
+        }
+
+        // Mark nav item as active
+        document.querySelector(`[data-label="${labelId}"]`)?.classList.add('active');
+      }
+
+      // Show first label on load
+      const firstLabel = document.querySelector('.label-nav-item');
+      if (firstLabel) {
+        firstLabel.click();
+      }
+
+      // Allow URLs to open in new tabs
+      document.querySelectorAll('.url-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          if (!e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            window.open(this.href, '_blank');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

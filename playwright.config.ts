@@ -48,6 +48,6 @@ export default defineConfig({
   webServer: {
     command: "node tests/mock-server.js",
     url: "http://localhost:3001/",
-    reuseExistingServer: false,
+    reuseExistingServer: true,
   },
 });
