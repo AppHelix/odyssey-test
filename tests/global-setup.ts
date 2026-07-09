@@ -16,10 +16,25 @@ if (dotenvResult.error) {
 }
 
 async function globalSetup(config: FullConfig) {
-  const baseURL = process.env.BASE_URL || "http://localhost:3001";
+  // Determine BASE_URL based on POD environment variable
+  const pod = (process.env.POD || 'stage').toLowerCase();
+  let baseURL = process.env.BASE_URL || "http://localhost:3001";
+  
+  if (pod === 'prod') {
+    baseURL = 'https://www.edx.org/';
+  } else if (pod === 'stage') {
+    baseURL = 'https://odyssey.stage.edx.org/';
+  }
+  // If local or custom URL is set, use that instead
+  if (process.env.BASE_URL && (process.env.BASE_URL.includes('localhost') || process.env.BASE_URL.includes('127.0.0.1'))) {
+    baseURL = process.env.BASE_URL;
+  }
+  
+  process.env.BASE_URL = baseURL; // Update environment variable for tests to use
+  
   const useSitemap = process.env.USE_SITEMAP === "true";
 
-  console.log(`[Global Setup] Started. USE_SITEMAP=${useSitemap}, BASE_URL=${baseURL}`);
+  console.log(`[Global Setup] Started. POD=${pod}, BASE_URL=${baseURL}, USE_SITEMAP=${useSitemap}`);
 
   if (useSitemap) {
     let mockProcess: any = null;
