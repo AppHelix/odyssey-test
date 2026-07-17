@@ -19,8 +19,18 @@ export const FILE_MAPPING: Record<string, string> = {
 /** Single Excel workbook produced by the Excel reporter. */
 export const EXCEL_REPORT_FILE = "validation-report.xlsx";
 
+/** Content-parity report artifacts produced by the comparison suite (tests-compare/). Listed
+ *  here so the validation reporters' test-results/ cleanup preserves them across runs. */
+export const COMPARISON_MD_FILE = "comparison-parity-report.md";
+export const COMPARISON_EXCEL_FILE = "comparison-parity-report.xlsx";
+
 /** Every file this framework's reporters own inside test-results/. */
-export const KNOWN_REPORT_FILES: string[] = [...Object.values(FILE_MAPPING), EXCEL_REPORT_FILE];
+export const KNOWN_REPORT_FILES: string[] = [
+  ...Object.values(FILE_MAPPING),
+  EXCEL_REPORT_FILE,
+  COMPARISON_MD_FILE,
+  COMPARISON_EXCEL_FILE,
+];
 
 // Semantic sub-test (rule) display names, derived from the rule registry + the active
 // sections (ACTIVE_SEMANTIC_CHECKS) + each rule's enabled() config flag. Adding, removing,
