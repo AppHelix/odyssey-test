@@ -11,9 +11,12 @@ validation-framework/
 ├── config/
 │   ├── page-validation.config.ts  # TypeScript interfaces and default configurations
 │   ├── urls.json                  # Manual URL list (used when USE_SITEMAP=false) — entries can
-│   │                               # be a plain string OR { url, expectedStatus?, expectedRedirectUrl?,
-│   │                               # pageType?, name?, legacyUrl? }; any entry with a "pageType" is
-│   │                               # ALSO picked up by the content-comparison suite (npm run test:compare)
+│   │                               # be a plain string OR { url, expectedStatus?, expectedRedirectUrl? }.
+│   │                               # Every URL is ALSO auto-checked against MAP_REGISTRY (via
+│   │                               # resolvePageType() in comparison/mappings/registry.ts); any URL
+│   │                               # matching a registered pageType pattern is picked up by the
+│   │                               # content-comparison suite (npm run test:compare) automatically —
+│   │                               # nothing to annotate per-entry
 │   └── sitemap-urls.json          # Cached sitemap URLs (auto-generated at runtime)
 ├── docs/
 │   ├── architecture-guide.md      # Layer-by-layer file reference
@@ -248,7 +251,9 @@ comparison/
 │   ├── types.ts             # FieldSpec, ComponentSelectorSet, ComponentMapping, PageComparisonMap
 │   ├── presets.ts           # reusable Odyssey field-spec presets (hero, richText, faq, cardGrid)
 │   ├── heading-region.ts    # shared ComponentSelectorSet adapter for heading-anchored regions
-│   ├── registry.ts          # MAP_REGISTRY: pageType -> PageComparisonMap (single source of truth)
+│   ├── registry.ts          # MAP_REGISTRY: pageType -> PageComparisonMap; also exports
+│   │                        # resolvePageType(url), which auto-matches a URL's path shape
+│   │                        # against these keys (no per-URL annotation needed)
 │   ├── workflow.md          # step-by-step process for mapping a new page type
 │   └── learn/               # pageType "learn" (/learn hub) — sub-pages nest inside it
 │       ├── learn.map.ts
@@ -260,8 +265,8 @@ comparison/
 │           ├── learn-deep.map.ts
 │           └── legacy-dom-input-learn-deep.md
 └── comparison.config.ts      # two base URLs + threshold, loaded from .env
-config/urls.json  # legacy<->odyssey path pairs to compare live here too — any entry with a
-                  # "pageType" field (see the config/ tree above)
+config/urls.json  # legacy<->odyssey path pairs to compare live here too — any URL whose path
+                  # shape matches a MAP_REGISTRY pattern is auto-picked up (see the config/ tree above)
 tests-compare/content-comparison.spec.ts   # loads both origins, runs the engine, attaches PageDiff
 tests/reporters/comparison-reporter.ts      # detailed parity report (Markdown + Excel)
 ```
@@ -312,7 +317,8 @@ escape hatch.
 In short — create `comparison/mappings/<page>/`, author `<page>.map.ts` (odyssey side from the
 Odyssey codebase, legacy side `null`) plus a blank `legacy-dom-input-<page>.md` placeholder for the
 legacy DOM to be pasted into later, register the map in `MAP_REGISTRY`
-(`comparison/mappings/registry.ts`), and add URL pairs referencing its `pageType`.
+(`comparison/mappings/registry.ts`), and make sure the page's URL(s) are present in
+`config/urls.json` — `resolvePageType()` matches them to the new pattern automatically.
 
 ### Configuration (`.env`)
 
@@ -325,15 +331,17 @@ legacy DOM to be pasted into later, register the map in `MAP_REGISTRY`
 | `REPORT_FORMAT` | `both` | `md`, `excel`, or `both` (reuses the framework's report switch) |
 
 URL pairs are NOT a separate file — they're entries in `config/urls.json` (the same file
-`URLS_FILE` points the page-validation suite at). Any entry there with a `pageType` field is also
-picked up as a legacy↔odyssey pair to compare; plain strings and objects without one are
-validator-only and skipped here. `legacyUrl` is optional and only needed when the legacy path
-genuinely differs from `url`:
+`URLS_FILE` points the page-validation suite at), and there's nothing to annotate per entry.
+Every URL's path is checked against `MAP_REGISTRY`'s pattern keys via `resolvePageType()`
+(`comparison/mappings/registry.ts`); a URL whose shape matches a registered pattern (e.g.
+`/learn/blender` matching `"learn/[slug]"`) is automatically picked up as a legacy↔odyssey pair to
+compare, using the same path on both origins. Anything that doesn't match a pattern is
+validator-only:
 
 ```json
 [
   "/about-us",
-  { "url": "/learn/blender", "pageType": "learn/[slug]", "name": "Blender Course" }
+  "/learn/blender"
 ]
 ```
 
