@@ -133,11 +133,12 @@ content silently.
 
 ### 4. Register the page
 
-- Add the map to `MAP_REGISTRY` in `comparison/mappings/registry.ts`.
-- Add one or more entries referencing the new `pageType` to `config/urls.json` — the SAME file the
-  page-validation suite reads, so an existing plain-string entry for this path just needs to become
-  `{ "url": "...", "pageType": "...", "name": "..." }` rather than a new entry in a separate file.
-  Only add `legacyUrl` if the legacy path genuinely differs from `url`.
+- Add the map to `MAP_REGISTRY` in `comparison/mappings/registry.ts`, keyed by the route pattern
+  (e.g. `"learn/[slug]"`).
+- Make sure the page's URL(s) are present in `config/urls.json` — the SAME file the page-validation
+  suite reads. Nothing to annotate: `resolvePageType()` (also in `registry.ts`) matches each URL's
+  path shape against `MAP_REGISTRY`'s keys automatically, so an existing plain-string entry for this
+  path is already enough; only add a new entry if the path isn't in `urls.json` yet.
 
 ### 5. Hand off, then fill in `legacy`
 

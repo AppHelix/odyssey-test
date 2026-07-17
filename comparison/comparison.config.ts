@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
+import { resolvePageType } from "./mappings/registry";
 
 // Load .env with override:true so it is the single source of truth, mirroring
 // config/page-validation.config.ts and the rest of the framework.
@@ -20,29 +21,12 @@ export interface CompareConfig {
 
 /** One legacy↔odyssey page pair to compare. Paths are relative and applied to each origin. */
 export interface UrlPair {
-  name?: string;
   /** Route pattern key into MAP_REGISTRY, e.g. "learn/[slug]". */
   pageType: string;
   /** Odyssey path, e.g. "/learn/blender". */
   odyssey: string;
   /** Legacy path, e.g. "/learn/blender". */
   legacy: string;
-}
-
-/**
- * One entry from config/urls.json. Shared with the page-validation suite
- * (tests/page-validation.spec.ts), which only ever reads `url`/`expectedStatus`/
- * `expectedRedirectUrl` and ignores the rest — so `pageType`/`name`/`legacyUrl` are safe
- * comparison-only additions on the SAME entries, not a second parallel file to keep in sync.
- * A plain string entry (no comparison metadata) is valid too; it's just skipped here.
- */
-interface UrlsJsonEntry {
-  url?: string;
-  /** Route pattern key into MAP_REGISTRY — entries without this are validator-only, not compared. */
-  pageType?: string;
-  name?: string;
-  /** Only needed when the legacy path genuinely differs from `url`; defaults to `url` otherwise. */
-  legacyUrl?: string;
 }
 
 const stripTrailingSlash = (u: string): string => u.replace(/\/+$/, "");
@@ -68,8 +52,12 @@ const URLS_FILE = process.env.URLS_FILE || "config/urls.json";
 
 /**
  * Load the legacy↔odyssey URL pairs from config/urls.json (empty array if absent/invalid).
- * Only entries with a `pageType` participate in comparison — plain strings and objects without
- * one are validator-only (health/seo/header/footer/semantic) and are silently skipped here.
+ * Every URL is checked against MAP_REGISTRY via `resolvePageType()` (comparison/mappings/registry.ts);
+ * only URLs that match a registered route pattern participate in comparison — everything else is
+ * validator-only (health/seo/header/footer/semantic) and is silently skipped here. Nothing needs to
+ * be hand-annotated per entry: an entry can be a plain URL string, or (for the validator suite's
+ * redirect-testing needs) `{ url, expectedStatus?, expectedRedirectUrl? }` — either way, only the
+ * `url` is used here.
  */
 export function loadUrlPairs(): UrlPair[] {
   const file = path.resolve(process.cwd(), URLS_FILE);
@@ -78,14 +66,12 @@ export function loadUrlPairs(): UrlPair[] {
     const parsed: unknown = JSON.parse(fs.readFileSync(file, "utf8"));
     if (!Array.isArray(parsed)) return [];
     const pairs: UrlPair[] = [];
-    for (const entry of parsed as UrlsJsonEntry[]) {
-      if (!entry || typeof entry !== "object" || !entry.pageType || !entry.url) continue;
-      pairs.push({
-        name: entry.name,
-        pageType: entry.pageType,
-        odyssey: entry.url,
-        legacy: entry.legacyUrl || entry.url,
-      });
+    for (const entry of parsed) {
+      const url = typeof entry === "string" ? entry : (entry as { url?: string })?.url;
+      if (!url) continue;
+      const pageType = resolvePageType(url);
+      if (!pageType) continue;
+      pairs.push({ pageType, odyssey: url, legacy: url });
     }
     return pairs;
   } catch {

@@ -7,7 +7,7 @@
   "/masters",
   "/about-us",
   "/accessibility",
-  { "url": "/become", "pageType": "become", "name": "Become Hub" },
+  "/become",
   "/bio",
   "/certificates",
   "/certificates/professional-certificate",
@@ -19,25 +19,13 @@
   "/googlecloud",
   "/googlecloud/professional-certificates",
   "/googlecloud/subject-areas",
-  { "url": "/learn", "pageType": "learn", "name": "Learn Hub" },
+  "/learn",
   "/modern-slavery-statement",
-  { "url": "/learn/bookkeeping", "pageType": "learn/[slug]", "name": "Bookkeeping Course" },
-  { "url": "/learn/computer-science", "pageType": "learn/[slug]", "name": "Computer Science Course" },
-  {
-    "url": "/learn/computer-science/amazon-web-services-automation-in-the-aws-cloud",
-    "pageType": "learn/[slug]/[slug2]",
-    "name": "AWS Automation (deep)"
-  },
-  {
-    "url": "/learn/computer-science/amazon-web-services-introduction-to-information-technology-and-aws-cloud",
-    "pageType": "learn/[slug]/[slug2]",
-    "name": "AWS Intro to IT and AWS Cloud (deep)"
-  },
-  { "url": "/become/data-scientist", "pageType": "become/[slug]", "name": "Become: Data Scientist" },
-  { "url": "/become/software-engineer", "pageType": "become/[slug]", "name": "Become Software Engineer" },
-  {
-    "url": "/become/how-to-become-a-software-engineer",
-    "pageType": "become/[slug]",
-    "name": "How to Become Software Engineer"
-  }
+  "/learn/bookkeeping",
+  "/learn/computer-science",
+  "/learn/computer-science/amazon-web-services-automation-in-the-aws-cloud",
+  "/learn/computer-science/amazon-web-services-introduction-to-information-technology-and-aws-cloud",
+  "/become/data-scientist",
+  "/become/software-engineer",
+  "/become/how-to-become-a-software-engineer"
 ]
